@@ -227,8 +227,8 @@ def _persist_diagnostics(
     y_true: pd.Series,
     y_pred: pd.Series,
     *,
-    precision_path: Path | str = "precision_recall_curve.png",
-    roc_path: Path | str = "roc_curve.png",
+    precision_path: Path | str = "outputs/precision_recall_curve_train.png",
+    roc_path: Path | str = "outputs/roc_curve_train.png",
 ) -> None:
     """Persist diagnostic plots to disk for the best configuration."""
 

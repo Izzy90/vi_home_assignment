@@ -42,8 +42,8 @@ def main() -> None:
         test_y,
         test_pred,
         min_recall=min_recall,
-        precision_plot_path=Path("precision_recall_curve_test.png"),
-        roc_plot_path=Path("roc_curve_test.png"),
+        precision_plot_path=Path("outputs/precision_recall_curve_test.png"),
+        roc_plot_path=Path("outputs/roc_curve_test.png"),
         classification_report_path=Path("outputs/classification_report_best_test.txt"),
     )
 
