@@ -34,9 +34,6 @@ def main() -> None:
         observation_window_end,
     )
 
-    print("train_data_df:")
-    pprint(train_df.head(10))
-
     X = train_df.drop(columns=["churn"])
     y = train_df["churn"]
 
