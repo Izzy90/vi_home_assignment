@@ -14,7 +14,7 @@ To run the main script, use: `python -m main`
 
 ### Runtime options
 
-- `--min-top-n`: minimum outreach list size used when searching for the precision-maximizing cutoff (default `200`, configurable in `config.py`). Example:
+- `--min-recall`: minimum recall threshold enforced when searching for the precision-maximizing cutoff (default `0.05`, configurable in `config.py`). Example:
   ```
-  python -m main --min-top-n 350
+  python -m main --min-recall 0.1
   ```

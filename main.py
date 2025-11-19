@@ -4,7 +4,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from config import DEFAULT_MIN_TOP_N
+from config import DEFAULT_MIN_RECALL
 from src.data_loader import load_test_data, load_training_data
 from src.dataset_builder import build_training_dataframe
 from src.features.app_features import build_app_features
@@ -23,11 +23,11 @@ from src.modeling import (
 
 def main() -> None:
     args = _parse_args()
-    min_top_n = args.min_top_n
+    min_recall = args.min_recall
     train_X, train_y = _prepare_dataset(load_training_data(), label="train")
     test_X, test_y = _prepare_dataset(load_test_data(), label="test")
 
-    _, metrics = train_and_evaluate(train_X, train_y, min_top_n=min_top_n)
+    _, metrics = train_and_evaluate(train_X, train_y, min_recall=min_recall)
     print(f"Training ROC-AUC: {metrics['roc_auc']:.4f}")
 
     best_params = metrics["best_params"]
@@ -41,7 +41,7 @@ def main() -> None:
     test_eval = evaluate_predictions(
         test_y,
         test_pred,
-        min_top_n=min_top_n,
+        min_recall=min_recall,
         precision_plot_path=Path("precision_recall_curve_test.png"),
         roc_plot_path=Path("roc_curve_test.png"),
         classification_report_path=Path("data/classification_report_best_test.txt"),
@@ -86,8 +86,8 @@ def _prepare_dataset(
     if "signup_date" in X.columns:
         X = X.drop(columns=["signup_date"])
 
-    print(f"{label}_data_df (showing first 10 rows):")
-    print(dataset_df.head(10))
+    # print(f"{label}_data_df (showing first 10 rows):")
+    # print(dataset_df.head(10))
 
     return X, y
 
@@ -97,12 +97,12 @@ def _parse_args() -> argparse.Namespace:
         description="Train churn model and evaluate precision-focused metrics."
     )
     parser.add_argument(
-        "--min-top-n",
-        type=int,
-        default=DEFAULT_MIN_TOP_N,
+        "--min-recall",
+        type=float,
+        default=DEFAULT_MIN_RECALL,
         help=(
-            "Minimum outreach list size used when searching for the precision-maximizing "
-            "cutoff (default from config: %(default)s)."
+            "Minimum recall threshold when searching for the precision-maximizing cutoff "
+            "(default from config: %(default)s)."
         ),
     )
     return parser.parse_args()
