@@ -41,6 +41,13 @@ def build_training_dataframe(
     numeric_feature_df = feature_df.select_dtypes(include=["number"]).drop(
         columns=["churn"]
     )
+    duplicated_numeric_cols = [
+        col
+        for col in train_data_df.columns
+        if col in numeric_feature_df.columns and col != "member_id"
+    ]
+    if duplicated_numeric_cols:
+        numeric_feature_df = numeric_feature_df.drop(columns=duplicated_numeric_cols)
 
     return train_data_df.merge(numeric_feature_df, on="member_id", how="left")
 
