@@ -308,7 +308,7 @@ def _compute_precision_summary(
 def _announce_precision(summary: PrecisionSummary, *, min_recall: float) -> None:
     """Log the best precision@N for visibility."""
     print(
-        f"Best precision@N: N={summary.best_top_n} yields precision={summary.best_precision:.4f} "
+        f"Best precision@N: N={summary.best_top_n}, threshold={summary.threshold}, yields precision={summary.best_precision:.4f} "
         f"(min_recall constraint={min_recall})"
     )
 
@@ -375,6 +375,7 @@ def predict_probabilities(model: xgboost.XGBClassifier, X: pd.DataFrame) -> pd.S
 def evaluate_predictions(
     y_true: pd.Series,
     y_pred_proba: pd.Series,
+    top_n: int,
     *,
     min_recall: float,
     precision_plot_path: Path,

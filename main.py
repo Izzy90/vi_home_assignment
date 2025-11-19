@@ -30,6 +30,7 @@ def main() -> None:
     _, metrics = train_and_evaluate(train_X, train_y, min_recall=min_recall)
     print(f"Training ROC-AUC: {metrics['roc_auc']:.4f}")
 
+    threshold_with_max_precision = metrics['best_threshold']
     best_params = metrics["best_params"]
     final_model = train_final_model(train_X, train_y, best_params)
     model_path = Path("models") / "best_precision_model.pkl"
@@ -38,23 +39,16 @@ def main() -> None:
     loaded_model = load_model(model_path)
     test_pred = predict_probabilities(loaded_model, test_X)
 
-    test_eval = evaluate_predictions(
-        test_y,
-        test_pred,
-        min_recall=min_recall,
-        precision_plot_path=Path("outputs/precision_recall_curve_test.png"),
-        roc_plot_path=Path("outputs/roc_curve_test.png"),
-        classification_report_path=Path("outputs/classification_report_best_test.txt"),
-    )
-
-    print(
-        f"Test precision@N: {test_eval['best_precision']:.4f} at N={test_eval['best_top_n']}"
-    )
-
-    # get top N member ids from test_x by top pred values
+    # get top-N
+    top_n = len(test_pred[test_pred >= threshold_with_max_precision])
+    # use top-N to get precision we would have observed after using the members list
     test_X['y_pred'] = test_pred
-    top_n = test_eval['best_top_n']
     top_N_member_ids = test_X.sort_values(by="y_pred", ascending=False).head(top_n).index
+    test_y_filtered_top_n = test_y[top_N_member_ids]
+    percision_at_top_n = test_y_filtered_top_n.sum() / len(test_y_filtered_top_n)
+
+    print(f"N should be: {top_n}, where we would observe precision: {percision_at_top_n:.4f}")
+
     top_N_member_ids_df = test_X.loc[top_N_member_ids]
     top_N_member_ids_df['rank'] = top_N_member_ids_df.index + 1
     outreach_df = top_N_member_ids_df[['member_id', 'rank', 'y_pred']].reset_index(drop=True)
