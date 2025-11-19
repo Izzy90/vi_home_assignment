@@ -11,3 +11,10 @@ Follow the steps below to recreate the project environment with `uv`.
    - With the virtual environment active, run `uv pip install -r pyproject.toml` to install the dependencies declared in `pyproject.toml`. If you prefer deterministic installs from `uv.lock`, run `uv pip sync`.
 
 To run the main script, use: `python -m main`
+
+### Runtime options
+
+- `--min-top-n`: minimum outreach list size used when searching for the precision-maximizing cutoff (default `200`, configurable in `config.py`). Example:
+  ```
+  python -m main --min-top-n 350
+  ```
