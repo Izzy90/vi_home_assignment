@@ -1,4 +1,5 @@
 import itertools
+import pickle
 import random
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -217,7 +218,13 @@ def _run_cv_for_params(
     }
 
 
-def _persist_diagnostics(y_true: pd.Series, y_pred: pd.Series) -> None:
+def _persist_diagnostics(
+    y_true: pd.Series,
+    y_pred: pd.Series,
+    *,
+    precision_path: Path | str = "precision_recall_curve.png",
+    roc_path: Path | str = "roc_curve.png",
+) -> None:
     """Persist diagnostic plots to disk for the best configuration."""
 
     precision, recall, _ = precision_recall_curve(y_true, y_pred)
@@ -226,7 +233,7 @@ def _persist_diagnostics(y_true: pd.Series, y_pred: pd.Series) -> None:
     plt.xlabel("Recall")
     plt.ylabel("Precision")
     plt.title("Precision-Recall curve")
-    plt.savefig("precision_recall_curve.png")
+    plt.savefig(precision_path)
     plt.close()
 
     fpr, tpr, _ = roc_curve(y_true, y_pred)
@@ -235,7 +242,7 @@ def _persist_diagnostics(y_true: pd.Series, y_pred: pd.Series) -> None:
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.title("ROC Curve")
-    plt.savefig("roc_curve.png")
+    plt.savefig(roc_path)
     plt.close()
 
 
@@ -322,3 +329,98 @@ def _write_classification_report(
     output_path.write_text(report)
     print(f"Saved classification report to {output_path}")
     return output_path
+
+
+def train_final_model(
+    X: pd.DataFrame,
+    y: pd.Series,
+    params: Dict,
+    *,
+    random_state: int = 42,
+) -> xgboost.XGBClassifier:
+    """Train a final XGBoost model on the full dataset using the best params."""
+    class_counts = y.value_counts()
+    negatives = class_counts.get(0, 0)
+    positives = class_counts.get(1, 1)
+    scale_pos_weight = negatives / positives if positives else 1.0
+
+    clf = xgboost.XGBClassifier(
+        n_estimators=1500,
+        learning_rate=params["learning_rate"],
+        max_depth=params["max_depth"],
+        subsample=params["subsample"],
+        colsample_bytree=params["colsample_bytree"],
+        reg_lambda=params["reg_lambda"],
+        reg_alpha=params["reg_alpha"],
+        gamma=params["gamma"],
+        min_child_weight=params["min_child_weight"],
+        scale_pos_weight=scale_pos_weight,
+        objective="binary:logistic",
+        eval_metric="auc",
+        tree_method="hist",
+        random_state=random_state,
+    )
+    clf.fit(X, y)
+    return clf
+
+
+def save_model(model: xgboost.XGBClassifier, path: Path) -> Path:
+    """Persist a trained model to disk via pickle."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as f:
+        pickle.dump(model, f)
+    print(f"Saved model to {path}")
+    return path
+
+
+def load_model(path: Path) -> xgboost.XGBClassifier:
+    """Load a pickled model from disk."""
+    with path.open("rb") as f:
+        model = pickle.load(f)
+    print(f"Loaded model from {path}")
+    return model
+
+
+def predict_probabilities(model: xgboost.XGBClassifier, X: pd.DataFrame) -> pd.Series:
+    """Generate churn probabilities with a trained model."""
+    return pd.Series(model.predict_proba(X)[:, 1], index=X.index, name="y_pred")
+
+
+def evaluate_predictions(
+    y_true: pd.Series,
+    y_pred_proba: pd.Series,
+    *,
+    min_top_n: int,
+    precision_plot_path: Path,
+    roc_plot_path: Path,
+    classification_report_path: Path,
+) -> Dict[str, object]:
+    """Evaluate predictions similarly to training diagnostics."""
+    y_true_series = pd.Series(y_true).reset_index(drop=True).rename("y_val")
+    y_pred_series = pd.Series(y_pred_proba).reset_index(drop=True).rename("y_pred")
+    predictions_df = (
+        pd.concat([y_true_series, y_pred_series], axis=1)
+        .sort_values(by="y_pred", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    best_top_n_info = _find_best_top_n(predictions_df, min_top_n=min_top_n)
+    _persist_diagnostics(
+        y_true_series,
+        y_pred_series,
+        precision_path=precision_plot_path,
+        roc_path=roc_plot_path,
+    )
+    _write_classification_report(
+        y_true_series,
+        y_pred_series,
+        threshold=best_top_n_info["threshold"],
+        output_path=classification_report_path,
+    )
+    pprint(predictions_df.head(20))
+    return {
+        "best_top_n": best_top_n_info["best_top_n"],
+        "best_precision": best_top_n_info["best_precision"],
+        "threshold": best_top_n_info["threshold"],
+        "precision_curve": best_top_n_info["precision_curve"],
+    }
