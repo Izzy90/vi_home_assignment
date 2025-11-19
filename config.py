@@ -1,1 +1,2 @@
 DATA_PATH = "./data"
+DEFAULT_MIN_TOP_N = 200
