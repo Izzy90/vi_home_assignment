@@ -99,7 +99,7 @@ def train_and_evaluate(
     precision_summary = best_result.precision_summary
     _announce_precision(precision_summary, min_recall=min_recall)
 
-    pprint(best_result.predictions_df.head(20))
+    # pprint(best_result.predictions_df.head(20))
 
     sweep_summary = [
         {
@@ -125,7 +125,7 @@ def train_and_evaluate(
             best_result.stacked_val_targets,
             best_result.stacked_val_preds,
             threshold=precision_summary.threshold,
-            output_path=Path("data/classification_report_best_train.txt"),
+            output_path=Path("outputs/classification_report_best_train.txt"),
         ),
         "y_pred": best_result.stacked_val_preds,
         "y_val": best_result.stacked_val_targets,
@@ -400,7 +400,7 @@ def evaluate_predictions(
         threshold=summary.threshold,
         output_path=classification_report_path,
     )
-    pprint(predictions_df.head(20))
+    # pprint(predictions_df.head(20))
     return {
         "best_top_n": summary.best_top_n,
         "best_precision": summary.best_precision,
