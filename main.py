@@ -44,13 +44,23 @@ def main() -> None:
         min_recall=min_recall,
         precision_plot_path=Path("precision_recall_curve_test.png"),
         roc_plot_path=Path("roc_curve_test.png"),
-        classification_report_path=Path("data/classification_report_best_test.txt"),
+        classification_report_path=Path("outputs/classification_report_best_test.txt"),
     )
 
     print(
         f"Test precision@N: {test_eval['best_precision']:.4f} at N={test_eval['best_top_n']}"
     )
-    print("Reached End")
+
+    # get top N member ids from test_x by top pred values
+    test_X['y_pred'] = test_pred
+    top_n = test_eval['best_top_n']
+    top_N_member_ids = test_X.sort_values(by="y_pred", ascending=False).head(top_n).index
+    top_N_member_ids_df = test_X.loc[top_N_member_ids]
+    top_N_member_ids_df['rank'] = top_N_member_ids_df.index + 1
+    outreach_df = top_N_member_ids_df[['member_id', 'rank', 'y_pred']].reset_index(drop=True)
+    outreach_df['rank'] = outreach_df.index + 1
+    outreach_df.rename({'y_pred': 'churn_probability'}, axis=1, inplace=True)
+    outreach_df.to_csv("outputs/top_N_member_ids_test.csv", index=False)
 
 
 def _prepare_dataset(
@@ -85,9 +95,6 @@ def _prepare_dataset(
 
     if "signup_date" in X.columns:
         X = X.drop(columns=["signup_date"])
-
-    # print(f"{label}_data_df (showing first 10 rows):")
-    # print(dataset_df.head(10))
 
     return X, y
 
