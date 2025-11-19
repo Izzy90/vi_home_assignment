@@ -19,6 +19,6 @@ To run the main script, use: `python -m main`
   python -m main --min-recall 0.1
   ```
 
-  ## Solution Description
+## Solution Description
 
-  After choosing a minimum recall (what percent of churn we want to fix), the model will create a list of N members that are most likely to churn. The list can be found in outputs\top_N_member_ids_test.csv
+After choosing a minimum recall (what percent of churn we want to fix), the model will create a list of N members that are most likely to churn. The list can be found in outputs\top_N_member_ids_test.csv
