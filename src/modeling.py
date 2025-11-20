@@ -434,7 +434,7 @@ def _build_classifier(
     scale_pos_weight = negatives / positives if positives else 1.0
 
     return xgboost.XGBClassifier(
-        n_estimators=1500,
+        n_estimators=100,
         learning_rate=params["learning_rate"],
         max_depth=params["max_depth"],
         subsample=params["subsample"],
@@ -445,7 +445,7 @@ def _build_classifier(
         min_child_weight=params["min_child_weight"],
         scale_pos_weight=scale_pos_weight,
         objective="binary:logistic",
-        eval_metric="auc",
+        eval_metric="pre",
         tree_method="hist",
         random_state=random_state,
         early_stopping_rounds=early_stopping_rounds,
